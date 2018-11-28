@@ -1,0 +1,13 @@
+#
+# Sample SOCKD configuration file.
+# MUST be edited before use.
+#
+port                    1080		# superfluous but included anyway
+trusted_interface       192.168.42.11	# local LAN
+#trusted_interface	192.168.42.12	# could have another (or more)
+bind_interface          sl0		# dialup interface
+#
+# end of sample SOCKD configuration file
+#
+
+

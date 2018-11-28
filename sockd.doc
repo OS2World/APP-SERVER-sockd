@@ -1,0 +1,237 @@
+A simple SOCKS server for OS/2
+==============================
+
+Introduction
+------------
+This package contains a very simple SOCKS server for OS/2.  It supports
+version 4 of the SOCKS protocol.  This is the version supported directly
+by the OS/2 TCP/IP stack, so it is not necessary to use special
+'socksified' clients.
+
+You will also need a name server package, since name serving is done using
+UDP, and SOCKS version 4 supports TCP only. You can get a small one from:
+
+         http://www.tavi.co.uk/os2pages/
+
+This SOCKS server contains no security checks; it's just provided as a
+lightweight server to permit access to an Internet connection from
+multiple clients.  There are other ways of doing this, but this one is
+cheap (free!) and consumes few resources. 
+
+
+What is SOCKS?
+--------------
+The SOCKS protocol is described fully elsewhere. Briefly, it is a way of
+providing external network access (e.g. to the Internet) via a 'firewall'
+machine. This means that there need only be one point of connection to the
+Internet, and this can be controlled at will.
+
+Essentially, the SOCKS server runs as a process on the system that has
+the direct connection (let's assume it is to the Internet); it might
+even be a dialup connection.  Any other machine (call it a 'client') is
+not permitted direct access to make arbitrary connections outside the
+local network.  However, it can ask the SOCKS server to make connections
+on its behalf. It can also ask the SOCKS server to 'listen' on ports on
+its behalf.
+
+The way a client typically works is that any application programs (web
+browsers, mail programs, etc.) have to be modified, so that instead of
+trying to make connections directly, they do so by connecting to the
+SOCKS server and making a special request.  Such modification is often
+known as 'socksification'.  For example, Netscape for OS/2 has an option
+for using a SOCKS server; you just fill in details of the server and
+that's all that is required; connection happens transparently. 
+
+However, the story on OS/2 is even rosier.  OS/2 Warp version 4 contains
+the facility for automatic 'socksification' of connection requests.  No
+modification is necessary; you just create two small configuration files
+and all applications are effectively socksified!
+
+
+Setting up the server
+=====================
+Installation and setting up of the server is very easy.
+
+Step 1
+------
+Copy the program files into place.  Copy SOCKD.EXE to any suitable
+directory; it is convenient if this directory is on the PATH.  Also,
+copy NETLIB.DLL to a directory that is on the LIBPATH. 
+
+Step 2
+------
+Locate the ETC directory used by TCP/IP.  If you don't know the location
+of this directory, type the command:
+
+          SET ETC
+
+at an OS/2 command prompt.  You need to edit one file in this directory,
+and create another.  We'll call this the ETC directory from now on.
+
+Step 3
+------
+Edit the file named SERVICES in the ETC directory.  You need to add the
+following line, if it isn't there already; it's best to keep the lines
+in numerical order (the number in the second column):
+
+         socks   1080/tcp
+
+Step 4
+------
+Create the SOCKD configuration file.  This must be called SOCKD.CNF, and
+must reside in the ETC directory. 
+
+The format of the configuration file is very simple.  Items within lines
+are separated by any number of space or tab characters (as long as there
+is at least one).  Anything on a line after (and including) a '#'
+character is ignored.  Each line starts with a command, followed by
+parameters which depend on the command.  Commands are as below: items in <>
+indicate values to be inserted. Commands don't have to be in upper case.
+
+PORT    <portnumber>
+	This indicates the port on which SOCKD should listen. Normally, this
+	command can be omitted, and the default port number derived from
+	the SERVICES file (see above) will be used.
+
+TRUSTED_INTERFACE   <ipaddress>
+	This specifies the IP address (expressed as a dotted quad) of the
+	interface on the server that is connected to the local network.
+	This interface is taken to be 'trusted', in that only local traffic
+	will be handled on it.
+	If the server has more than one local interface, this line may be
+	repeated in order to specify additional local interfaces.
+
+BIND_INTERFACE    <ipaddress/interfacename>
+	This specifies the IP address (expressed as a dotted quad) of the
+	interface that is connected to the outside world. This is the one
+	on which listening will be done, and to which requests will be issued,
+	on behalf of SOCKS clients.
+	Because, for a dialup connection, the IP address may be assigned
+	dynamically, it is permissible to put an interface name here instead
+	of the IP address; SOCKD will then obtain the correct associated
+	IP address when required. Acceptable interface names are lan0 to lan7,
+	and sl0 to sl3. No testing has been done with ppp interfaces but the
+	functionlity can be added if someone will undertake to test it!
+
+A sample SOCKD.CNF is included with the package.  This MUST NOT be used
+in its current form; edit to suit your local environment.
+
+Step 5
+------
+Start the server. The easiest way is to issue the command:
+
+	START "SOCKS Server" /MIN /N SOCKD
+
+This starts the program minimised, in a VIO window, and it will appear in the
+Window List with a meaningful name.
+
+To start the server automatically at every boot, add the above command
+to the \TCPIP\BIN\TCPEXIT.CMD file.  If that file doesn't exist, create
+it, containing just the above line. 
+
+Logging
+-------
+The server maintains a logfile in the ETC directory, under the name
+SOCKD.LOG.  This file will grow without bound unless regularly pruned;
+its use is really limited to debugging.  It could be deleted or renamed
+in TCPEXIT.CMD, just before starting the program. 
+
+That's all there is to starting the server.
+
+
+Setting up an OS/2 client
+=========================
+If the client machine is an OS/2 one, then all you have to do is enable
+SOCKS support.  You do not need to do anything special in any programs
+(e.g.  nominate a SOCKS server).  This is all automatically handled by
+OS/2. 
+
+Step 1
+------
+Locate the ETC directory used by TCP/IP.  If you don't know the location
+of this directory, type the command:
+
+          SET ETC
+
+at an OS/2 command prompt.  You will need to create two files in this
+directory.  We'll call this the ETC directory from now on. 
+
+Step 2
+------
+Create the SOCKS.CFG file in the ETC directory.  Full documentation can
+be found in the Assistance Center folder on a Warp 4 system with TCP/IP
+installed; open Infornation within that, then Tasks within that, then
+TCP/IP Guide within that.
+
+Locate the section named "Ensuring Network Security", expand it, and
+find the section named "SOCKS Support for TCP/IP Client Applications". 
+Select the link "the SOCKS configuration files".  This contains a link
+to full documentation on the SOCKS.CFG file. 
+
+In summary, all you will probably need are these lines, suitably modified:
+
+direct  192.168.1.0       255.255.255.0 
+sockd   @=xyz.abc.zzz     0.0.0.0         0.0.0.0
+
+The first line specifies a host, or group of hosts, that don't need to
+be accessed via SOCKS.  Direct (normal) connection will be used for
+these, and this would normally be the case for hosts on your local
+network.  Rather than giving individual addresses, you can give a
+network address and a mask to be applied to all addresses being checked. 
+In the above example, all addresses starting with 192.168.1  would be
+treated as direct ones; the 0 in the mask (the second parameter) allows
+all values in the last position to match.  This 'direct' line can be
+repeated as many times as desired. 
+
+The second line specifies how to find a SOCKS server.  All statements
+like this must come AFTER the last 'direct' statement.  The name (or IP
+address) of the SOCKS server appears first, followed by the IP addresses
+(qualified by masks) that the server can reach.  In practice, your SOCKS
+server will probably serve for all non-direct addresses, in which case
+the line shown will match them all and will be enough.
+
+Step 3
+------
+Create the SOCKS.ENV file in the ETC directory.  Find documentation in
+the same place as for SOCKS.CFG. 
+
+A typical SOCKS.ENV file might be:
+
+socks_flag      on
+socks_user      rde
+socks_domain    abc.zzz
+socks_ns        192.168.1.11
+socks_server    
+
+The first line is essential. Have it exactly as shown.
+
+The second line gives a username for SOCKS authorisation.  The server
+does none, but put the line in anyway, with any string you like as the
+parameter!
+
+The third line gives the SOCKS domain; use the domain for your local
+network. 
+
+The fourth line specifies the name server to be used; you'll need to
+specify a nameserver on the local network.  A simple one is obtainable
+from:
+	http://www.tavi.co.uk/os2pages/ 
+
+The fifth line is required and should be entered 'as is'.
+
+Step 4
+------
+That's all. It should work now.
+
+Bugs
+====
+The server has problems with multiple FTP requests (i.e. via the MPUT and MGET
+commands). This is under investigation.
+
+
+Bob Eager
+rde@tavi.co.uk
+July 1999
+
+
+
